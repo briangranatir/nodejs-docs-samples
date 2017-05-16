@@ -1,0 +1,11 @@
+{
+  "name": "cloudiot-device-manager-example",
+  "version": "0.0.1",
+  "description": "Example of Cloud IoT device administration",
+  "main": "cloudiot-device-manager-example.js",
+  "dependencies": {
+    "async": "^2.1.4",
+    "commander": "^2.9.0",
+    "googleapis": "^16.1.0"
+  }
+}
