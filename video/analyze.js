@@ -18,10 +18,10 @@
 function analyzeFaces (gcsUri) {
   // [START analyze_faces]
   // Imports the Google Cloud Video Intelligence library
-  const Video = require('@google-cloud/videointelligence');
+  const Video = require('@google-cloud/video-intelligence');
 
   // Instantiates a client
-  const video = Video().videoIntelligenceServiceClient();
+  const video = Video();
 
   // The GCS filepath of the video to analyze
   // const gcsUri = 'gs://my-bucket/my-video.mp4';
@@ -43,10 +43,23 @@ function analyzeFaces (gcsUri) {
       const faces = results[0].annotationResults[0].faceAnnotations;
       console.log('Faces:');
       faces.forEach((face, faceIdx) => {
-        console.log('\tThumbnail size:', face.thumbnail.length);
-        face.segments.forEach((segment, segmentIdx) => {
-          console.log(`\tTrack ${segmentIdx} of face ${faceIdx}: frames ${segment.startTimeOffset} to ${segment.endTimeOffset}`);
-        });
+        console.log('Thumbnail size:', face.thumbnail.length);
+
+        const isEntireVideo = face.segments.some((segment) =>
+          segment.startTimeOffset.toNumber() === -1 &&
+          segment.endTimeOffset.toNumber() === -1
+        );
+
+        if (isEntireVideo) {
+          console.log(`Face #${faceIdx}`);
+          console.log(`\tEntire video`);
+        } else {
+          face.segments.forEach((segment, segmentIdx) => {
+            console.log(`Face #${faceIdx}, appearance #${segmentIdx}:`);
+            console.log(`\tStart: ${segment.startTimeOffset / 1e6}s`);
+            console.log(`\tEnd: ${segment.endTimeOffset / 1e6}s`);
+          });
+        }
       });
     })
     .catch((err) => {
@@ -58,10 +71,10 @@ function analyzeFaces (gcsUri) {
 function analyzeLabelsGCS (gcsUri) {
   // [START analyze_labels_gcs]
   // Imports the Google Cloud Video Intelligence library
-  const Video = require('@google-cloud/videointelligence');
+  const Video = require('@google-cloud/video-intelligence');
 
   // Instantiates a client
-  const video = Video().videoIntelligenceServiceClient();
+  const video = Video();
 
   // The GCS filepath of the video to analyze
   // const gcsUri = 'gs://my-bucket/my-video.mp4';
@@ -83,11 +96,20 @@ function analyzeLabelsGCS (gcsUri) {
       const labels = results[0].annotationResults[0].labelAnnotations;
       console.log('Labels:');
       labels.forEach((label) => {
-        console.log('Label description:', label.description);
-        console.log('Locations:');
-        label.locations.forEach((location) => {
-          console.log(`\tFrames ${location.segment.startTimeOffset} to ${location.segment.endTimeOffset}`);
-        });
+        console.log(`Label ${label.description} occurs at:`);
+        const isEntireVideo = label.locations.some((location) =>
+          location.segment.startTimeOffset.toNumber() === -1 &&
+          location.segment.endTimeOffset.toNumber() === -1
+        );
+
+        if (isEntireVideo) {
+          console.log(`\tEntire video`);
+        } else {
+          label.locations.forEach((location) => {
+            console.log(`\tStart: ${location.segment.startTimeOffset / 1e6}s`);
+            console.log(`\tEnd: ${location.segment.endTimeOffset / 1e6}s`);
+          });
+        }
       });
     })
     .catch((err) => {
@@ -99,11 +121,11 @@ function analyzeLabelsGCS (gcsUri) {
 function analyzeLabelsLocal (path) {
   // [START analyze_labels_local]
   // Imports the Google Cloud Video Intelligence library + Node's fs library
-  const Video = require('@google-cloud/videointelligence');
+  const Video = require('@google-cloud/video-intelligence');
   const fs = require('fs');
 
   // Instantiates a client
-  const video = Video().videoIntelligenceServiceClient();
+  const video = Video();
 
   // The local filepath of the video to analyze
   // const path = 'my-file.mp4';
@@ -130,11 +152,20 @@ function analyzeLabelsLocal (path) {
       const labels = results[0].annotationResults[0].labelAnnotations;
       console.log('Labels:');
       labels.forEach((label) => {
-        console.log('Label description:', label.description);
-        console.log('Locations:');
-        label.locations.forEach((location) => {
-          console.log(`\tFrames ${location.segment.startTimeOffset} to ${location.segment.endTimeOffset}`);
-        });
+        console.log(`Label ${label.description} occurs at:`);
+        const isEntireVideo = label.locations.some((location) =>
+          location.segment.startTimeOffset.toNumber() === -1 &&
+          location.segment.endTimeOffset.toNumber() === -1
+        );
+
+        if (isEntireVideo) {
+          console.log(`\tEntire video`);
+        } else {
+          label.locations.forEach((location) => {
+            console.log(`\tStart: ${location.segment.startTimeOffset / 1e6}s`);
+            console.log(`\tEnd: ${location.segment.endTimeOffset / 1e6}s`);
+          });
+        }
       });
     })
     .catch((err) => {
@@ -146,10 +177,10 @@ function analyzeLabelsLocal (path) {
 function analyzeShots (gcsUri) {
   // [START analyze_shots]
   // Imports the Google Cloud Video Intelligence library
-  const Video = require('@google-cloud/videointelligence');
+  const Video = require('@google-cloud/video-intelligence');
 
   // Instantiates a client
-  const video = Video().videoIntelligenceServiceClient();
+  const video = Video();
 
   // The GCS filepath of the video to analyze
   // const gcsUri = 'gs://my-bucket/my-video.mp4';
@@ -170,11 +201,16 @@ function analyzeShots (gcsUri) {
       // Gets shot changes
       const shotChanges = results[0].annotationResults[0].shotAnnotations;
       console.log('Shot changes:');
-      shotChanges.forEach((shot, shotIdx) => {
-        console.log(`Scene ${shotIdx}:`);
-        console.log(`\tStart: ${shot.startTimeOffset}`);
-        console.log(`\tEnd: ${shot.endTimeOffset}`);
-      });
+
+      if (shotChanges.length === 1) {
+        console.log(`The entire video is one shot.`);
+      } else {
+        shotChanges.forEach((shot, shotIdx) => {
+          console.log(`Shot ${shotIdx} occurs from:`);
+          console.log(`\tStart: ${shot.startTimeOffset / 1e6}s`);
+          console.log(`\tEnd: ${shot.endTimeOffset / 1e6}s`);
+        });
+      }
     })
     .catch((err) => {
       console.error('ERROR:', err);
@@ -185,10 +221,10 @@ function analyzeShots (gcsUri) {
 function analyzeSafeSearch (gcsUri) {
   // [START analyze_safe_search]
   // Imports the Google Cloud Video Intelligence library
-  const Video = require('@google-cloud/videointelligence');
+  const Video = require('@google-cloud/video-intelligence');
 
   // Instantiates a client
-  const video = Video().videoIntelligenceServiceClient();
+  const video = Video();
 
   // The GCS filepath of the video to analyze
   // const gcsUri = 'gs://my-bucket/my-video.mp4';
@@ -197,6 +233,9 @@ function analyzeSafeSearch (gcsUri) {
     inputUri: gcsUri,
     features: ['SAFE_SEARCH_DETECTION']
   };
+
+  // Human-readable likelihoods
+  const likelihoods = ['UNKNOWN', 'VERY_UNLIKELY', 'UNLIKELY', 'POSSIBLE', 'LIKELY', 'VERY_LIKELY'];
 
   // Detects unsafe content
   video.annotateVideo(request)
@@ -210,12 +249,12 @@ function analyzeSafeSearch (gcsUri) {
       const safeSearchResults = results[0].annotationResults[0].safeSearchAnnotations;
       console.log('Safe search results:');
       safeSearchResults.forEach((result) => {
-        console.log(`Frame ${result.timeOffset}:`);
-        console.log(`\tAdult: ${result.adult}`);
-        console.log(`\tSpoof: ${result.spoof}`);
-        console.log(`\tMedical: ${result.medical}`);
-        console.log(`\tViolent: ${result.violent}`);
-        console.log(`\tRacy: ${result.racy}`);
+        console.log(`Time: ${result.timeOffset / 1e6}s`);
+        console.log(`\tAdult: ${likelihoods[result.adult]}`);
+        console.log(`\tSpoof: ${likelihoods[result.spoof]}`);
+        console.log(`\tMedical: ${likelihoods[result.medical]}`);
+        console.log(`\tViolent: ${likelihoods[result.violent]}`);
+        console.log(`\tRacy: ${likelihoods[result.racy]}`);
       });
     })
     .catch((err) => {
@@ -256,11 +295,11 @@ require(`yargs`) // eslint-disable-line
     {},
     (opts) => analyzeSafeSearch(opts.gcsUri)
   )
-  .example(`node $0 faces gs://my-bucket/my-video.mp4`)
-  .example(`node $0 shots gs://my-bucket/my-video.mp4`)
-  .example(`node $0 labels-gcs gs://my-bucket/my-video.mp4`)
-  .example(`node $0 labels-file my-video.mp4`)
-  .example(`node $0 safe-search gs://my-bucket/my-video.mp4`)
+  .example(`node $0 faces gs://demomaker/larry_sergey_ice_bucket_short.mp4`)
+  .example(`node $0 shots gs://demomaker/sushi.mp4`)
+  .example(`node $0 labels-gcs gs://demomaker/tomatoes.mp4`)
+  .example(`node $0 labels-file cat.mp4`)
+  .example(`node $0 safe-search gs://demomaker/tomatoes.mp4`)
   .wrap(120)
   .recommendCommands()
   .epilogue(`For more information, see https://cloud.google.com/video-intelligence/docs`)
